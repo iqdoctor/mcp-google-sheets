@@ -141,6 +141,13 @@ def get_sheet_data(spreadsheet_id: str,
     Returns:
         Grid data structure with either full metadata or just values, depending on sheet_data parameter
     """
+    # Right after the docstring in get_sheet_data function, around line 143, add:
+    print("Function arguments:")
+    print(f"spreadsheet_id: {spreadsheet_id}")
+    print(f"sheet: {sheet}")
+    print(f"range: {range}")
+    print(f"sheet_data_format: {sheet_data_format}")
+
     sheets_service = ctx.request_context.lifespan_context.sheets_service
     
     # Construct the range - keep original API behavior
@@ -156,6 +163,7 @@ def get_sheet_data(spreadsheet_id: str,
             ranges=[full_range],
             includeGridData=True
         ).execute()
+        print("Full sheet data result:", result)  # Add this line
         return result
     else:
         # Compact mode - values only (faster and more lightweight)
@@ -163,7 +171,9 @@ def get_sheet_data(spreadsheet_id: str,
             spreadsheetId=spreadsheet_id,
             range=full_range
         ).execute()
-        return result.get('values', [])
+        values = result.get('values', [])
+        print("Compact sheet data values:", values)  # Add this line
+        return values
 
 
 @mcp.tool()
