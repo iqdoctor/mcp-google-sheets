@@ -123,9 +123,10 @@ mcp = FastMCP("Google Spreadsheet",
 
 
 @mcp.tool()
-def get_sheet_data(spreadsheet_id: str, 
+def get_sheet_data(spreadsheet_id: str,
                    sheet: str,
                    range: Optional[str] = None,
+                   sheet_data_format: str = 'compact',
                    ctx: Context = None) -> Dict[str, Any]:
     """
     Get data from a specific sheet in a Google Spreadsheet.
@@ -134,9 +135,11 @@ def get_sheet_data(spreadsheet_id: str,
         spreadsheet_id: The ID of the spreadsheet (found in the URL)
         sheet: The name of the sheet
         range: Optional cell range in A1 notation (e.g., 'A1:C10'). If not provided, gets all data.
+        sheet_data_format: Data format to return. 'full' for complete metadata including formatting,
+                   'compact' for values only (faster and more lightweight). Default is 'compact'.
     
     Returns:
-        Grid data structure with full metadata from Google Sheets API
+        Grid data structure with either full metadata or just values, depending on sheet_data parameter
     """
     sheets_service = ctx.request_context.lifespan_context.sheets_service
     
@@ -146,15 +149,22 @@ def get_sheet_data(spreadsheet_id: str,
     else:
         full_range = sheet
     
-    # Use includeGridData to preserve empty cells and structure
-    result = sheets_service.spreadsheets().get(
-        spreadsheetId=spreadsheet_id,
-        ranges=[full_range],
-        includeGridData=True
-    ).execute()
-    
-    # Return the grid data as-is, preserving all Google's metadata
-    return result
+    if sheet_data_format.lower() == 'full':
+        # Full metadata including formatting and formulas
+        result = sheets_service.spreadsheets().get(
+            spreadsheetId=spreadsheet_id,
+            ranges=[full_range],
+            includeGridData=True
+        ).execute()
+        return result
+    else:
+        # Compact mode - values only (faster and more lightweight)
+        result = sheets_service.spreadsheets().values().get(
+            spreadsheetId=spreadsheet_id,
+            range=full_range
+        ).execute()
+        return result.get('values', [])
+
 
 @mcp.tool()
 def get_sheet_formulas(spreadsheet_id: str,
