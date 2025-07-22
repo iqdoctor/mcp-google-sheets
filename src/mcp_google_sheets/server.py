@@ -126,7 +126,7 @@ mcp = FastMCP("Google Spreadsheet",
 def get_sheet_data(spreadsheet_id: str,
                    sheet: str,
                    range: Optional[str] = None,
-                   sheet_data_format: str = 'compact',
+                   include_grid_data: bool = False,
                    ctx: Context = None) -> Dict[str, Any]:
     """
     Get data from a specific sheet in a Google Spreadsheet.
@@ -135,8 +135,10 @@ def get_sheet_data(spreadsheet_id: str,
         spreadsheet_id: The ID of the spreadsheet (found in the URL)
         sheet: The name of the sheet
         range: Optional cell range in A1 notation (e.g., 'A1:C10'). If not provided, gets all data.
-        sheet_data_format: Data format to return. 'full' for complete metadata including formatting,
-                   'compact' for values only (faster and more lightweight). Default is 'compact'.
+        include_grid_data: If True, includes cell formatting and other metadata in the response.
+            Note: Setting this to True will significantly increase the response size and token usage
+            when parsing the response, as it includes detailed cell formatting information.
+            Default is False (returns values only, more efficient).
     
     Returns:
         Grid data structure with either full metadata or just values, depending on sheet_data parameter
@@ -145,7 +147,7 @@ def get_sheet_data(spreadsheet_id: str,
     print(f"spreadsheet_id: {spreadsheet_id}")
     print(f"sheet: {sheet}")
     print(f"range: {range}")
-    print(f"sheet_data_format: {sheet_data_format}")
+    print(f"include_grid_data: {include_grid_data}")
 
     sheets_service = ctx.request_context.lifespan_context.sheets_service
 
@@ -155,24 +157,16 @@ def get_sheet_data(spreadsheet_id: str,
     else:
         full_range = sheet
 
-    if sheet_data_format.lower() == 'full':
-        print("Using full format with metadata")
-        result = sheets_service.spreadsheets().get(
-            spreadsheetId=spreadsheet_id,
-            ranges=[full_range],
-            includeGridData=True
-        ).execute()
-        print(f"Full format result type: {type(result)}")
-        return result
-    else:
-        print("Using compact format (values only)")
-        result = sheets_service.spreadsheets().values().get(
-            spreadsheetId=spreadsheet_id,
-            range=full_range
-        ).execute()
+    result = sheets_service.spreadsheets().get(
+        spreadsheetId=spreadsheet_id,
+        ranges=[full_range],
+        includeGridData=include_grid_data
+    ).execute()
 
-        print(f"Full format result type: {type(result)}")
-        return result
+    print(f"Response size: {len(str(result))} chars")
+    
+    print(f"Result type: {type(result)}")
+    return result
 
 
 
