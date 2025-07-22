@@ -696,19 +696,19 @@ def get_multiple_spreadsheet_summary(spreadsheet_ids: List[str],
 
 
 @mcp.resource("spreadsheet://{spreadsheet_id}/info")
-def get_spreadsheet_info(spreadsheet_id: str, ctx: Context = None) -> str:
+def get_spreadsheet_info(spreadsheet_id: str) -> str:
     """
     Get basic information about a Google Spreadsheet.
     
     Args:
         spreadsheet_id: The ID of the spreadsheet
-        ctx: Context object containing lifespan context
-    
+
     Returns:
         JSON string with spreadsheet information
     """
-    # Access the context through ctx parameter (like other functions)
-    sheets_service = ctx.request_context.lifespan_context.sheets_service
+    # Access the context through mcp.get_lifespan_context() for resources
+    context = mcp.get_lifespan_context()
+    sheets_service = context.sheets_service
     
     # Get spreadsheet metadata
     spreadsheet = sheets_service.spreadsheets().get(spreadsheetId=spreadsheet_id).execute()
