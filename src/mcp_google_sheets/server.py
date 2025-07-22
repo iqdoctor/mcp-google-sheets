@@ -127,7 +127,7 @@ def get_sheet_data(spreadsheet_id: str,
                    sheet: str,
                    range: Optional[str] = None,
                    sheet_data_format: str = 'compact',
-                   ctx: Context = None) -> Dict[str, Any]:
+                   ctx: Context = None):
     """
     Get data from a specific sheet in a Google Spreadsheet.
     
