@@ -172,8 +172,15 @@ def get_sheet_data(spreadsheet_id: str,
             range=full_range
         ).execute()
         values = result.get('values', [])
-        print("Compact sheet data values:", values)  # Add this line
-        return values
+        print("Compact sheet data values:", values)
+        # Return a dictionary to match the function's return type annotation
+        return {
+            'spreadsheetId': spreadsheet_id,
+            'range': full_range,
+            'values': values,
+            'majorDimension': 'ROWS',
+            'format': 'compact'
+        }
 
 
 @mcp.tool()
