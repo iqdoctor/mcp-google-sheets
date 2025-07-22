@@ -148,38 +148,69 @@ def get_sheet_data(spreadsheet_id: str,
     print(f"range: {range}")
     print(f"sheet_data_format: {sheet_data_format}")
 
-    sheets_service = ctx.request_context.lifespan_context.sheets_service
-    
-    # Construct the range - keep original API behavior
-    if range:
-        full_range = f"{sheet}!{range}"
-    else:
-        full_range = sheet
-    
-    if sheet_data_format.lower() == 'full':
-        # Full metadata including formatting and formulas
-        result = sheets_service.spreadsheets().get(
-            spreadsheetId=spreadsheet_id,
-            ranges=[full_range],
-            includeGridData=True
-        ).execute()
-        print("Full sheet data result:", result)  # Add this line
-        return result
-    else:
-        # Compact mode - values only (faster and more lightweight)
-        result = sheets_service.spreadsheets().values().get(
-            spreadsheetId=spreadsheet_id,
-            range=full_range
-        ).execute()
-        values = result.get('values', [])
-        print("Compact sheet data values:", values)
-        # Return a dictionary to match the function's return type annotation
+    try:
+        sheets_service = ctx.request_context.lifespan_context.sheets_service
+        
+        # Construct the range - keep original API behavior
+        if range:
+            full_range = f"{sheet}!{range}"
+        else:
+            full_range = sheet
+        
+        if sheet_data_format.lower() == 'full':
+            print("Using full format with metadata")
+            result = sheets_service.spreadsheets().get(
+                spreadsheetId=spreadsheet_id,
+                ranges=[full_range],
+                includeGridData=True
+            ).execute()
+            print(f"Full format result type: {type(result)}")
+            return result
+        else:
+            print("Using compact format (values only)")
+            result = sheets_service.spreadsheets().values().get(
+                spreadsheetId=spreadsheet_id,
+                range=full_range
+            ).execute()
+            
+            print(f"Raw API response: {result}")
+            
+            # Ensure we have a dictionary with values
+            if not isinstance(result, dict):
+                print(f"Warning: Expected dict, got {type(result)}. Converting to dict format.")
+                result = {'values': [result] if not isinstance(result, list) else result}
+            
+            # Ensure 'values' exists and is a list
+            if 'values' not in result:
+                if 'valueRanges' in result and result['valueRanges']:
+                    values = result['valueRanges'][0].get('values', [])
+                else:
+                    values = []
+                result['values'] = values
+            
+            # Build the standardized response
+            response = {
+                'spreadsheetId': spreadsheet_id,
+                'range': result.get('range', full_range),
+                'values': result.get('values', []),
+                'majorDimension': result.get('majorDimension', 'ROWS'),
+                'format': 'compact'
+            }
+            
+            print(f"Final response type: {type(response)}")
+            print(f"Response keys: {list(response.keys())}")
+            return response
+            
+    except Exception as e:
+        print(f"Error in get_sheet_data: {str(e)}")
+        # Return an error response in the expected format
         return {
             'spreadsheetId': spreadsheet_id,
-            'range': full_range,
-            'values': values,
+            'range': full_range if 'full_range' in locals() else 'unknown',
+            'values': [],
             'majorDimension': 'ROWS',
-            'format': 'compact'
+            'format': 'error',
+            'error': str(e)
         }
 
 
