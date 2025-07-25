@@ -157,14 +157,30 @@ def get_sheet_data(spreadsheet_id: str,
     else:
         full_range = sheet
 
-    result = sheets_service.spreadsheets().get(
-        spreadsheetId=spreadsheet_id,
-        ranges=[full_range],
-        includeGridData=include_grid_data
-    ).execute()
+    if include_grid_data:
+        # Use the full API to get all grid data including formatting
+        result = sheets_service.spreadsheets().get(
+            spreadsheetId=spreadsheet_id,
+            ranges=[full_range],
+            includeGridData=True
+        ).execute()
+    else:
+        # Use the more efficient values API when only cell values are needed
+        result = sheets_service.spreadsheets().values().get(
+            spreadsheetId=spreadsheet_id,
+            range=full_range
+        ).execute()
+        
+        # Transform the result to match the expected structure
+        result = {
+            'spreadsheetId': spreadsheet_id,
+            'valueRanges': [{
+                'range': full_range,
+                'values': result.get('values', [])
+            }]
+        }
 
     print(f"Response size: {len(str(result))} chars")
-    
     print(f"Result type: {type(result)}")
     return result
 
