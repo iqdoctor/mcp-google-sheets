@@ -20,7 +20,7 @@ It standardizes on:
 ├─ pyproject.toml
 ├─ uv.lock                  # resolved dependency lockfile (optional to commit)
 ├─ src/
-│  └─ <package_name>/
+│  └─ <mcp-server-name>/
 │     ├─ __init__.py       # exposes main() and imports server
 │     └─ server.py         # FastMCP server implementation
 ├─ docs/
@@ -30,7 +30,7 @@ It standardizes on:
 
 Notes:
 
-- Keep everything under `src/` with a proper Python package name, e.g., `mcp_google_sheets` or `mcp_voicebot`.
+- Keep everything under `src/` with a proper Python package name, e.g., `mcp_google_sheets` or `mcp_strato_voice_bot`.
 - Expose a console script via `[project.scripts]` in `pyproject.toml` so `uvx <package>@latest` runs the server.
 
 ---
