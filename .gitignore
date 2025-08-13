@@ -9,8 +9,5 @@ wheels/
 **/token.json
 **/service_account.json
 
-# PyCharm-generated files
-.idea/
-
 # Virtual environments
 .venv

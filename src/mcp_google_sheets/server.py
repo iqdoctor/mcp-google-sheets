@@ -123,10 +123,9 @@ mcp = FastMCP("Google Spreadsheet",
 
 
 @mcp.tool()
-def get_sheet_data(spreadsheet_id: str,
+def get_sheet_data(spreadsheet_id: str, 
                    sheet: str,
                    range: Optional[str] = None,
-                   include_grid_data: bool = False,
                    ctx: Context = None) -> Dict[str, Any]:
     """
     Get data from a specific sheet in a Google Spreadsheet.
@@ -135,56 +134,27 @@ def get_sheet_data(spreadsheet_id: str,
         spreadsheet_id: The ID of the spreadsheet (found in the URL)
         sheet: The name of the sheet
         range: Optional cell range in A1 notation (e.g., 'A1:C10'). If not provided, gets all data.
-        include_grid_data: If True, includes cell formatting and other metadata in the response.
-            Note: Setting this to True will significantly increase the response size and token usage
-            when parsing the response, as it includes detailed cell formatting information.
-            Default is False (returns values only, more efficient).
     
     Returns:
-        Grid data structure with either full metadata or just values, depending on sheet_data parameter
+        Grid data structure with full metadata from Google Sheets API
     """
-    print("Function arguments:")
-    print(f"spreadsheet_id: {spreadsheet_id}")
-    print(f"sheet: {sheet}")
-    print(f"range: {range}")
-    print(f"include_grid_data: {include_grid_data}")
-
     sheets_service = ctx.request_context.lifespan_context.sheets_service
-
+    
     # Construct the range - keep original API behavior
     if range:
         full_range = f"{sheet}!{range}"
     else:
         full_range = sheet
-
-    if include_grid_data:
-        # Use the full API to get all grid data including formatting
-        result = sheets_service.spreadsheets().get(
-            spreadsheetId=spreadsheet_id,
-            ranges=[full_range],
-            includeGridData=True
-        ).execute()
-    else:
-        # Use the more efficient values API when only cell values are needed
-        result = sheets_service.spreadsheets().values().get(
-            spreadsheetId=spreadsheet_id,
-            range=full_range
-        ).execute()
-        
-        # Transform the result to match the expected structure
-        result = {
-            'spreadsheetId': spreadsheet_id,
-            'valueRanges': [{
-                'range': full_range,
-                'values': result.get('values', [])
-            }]
-        }
-
-    print(f"Response size: {len(str(result))} chars")
-    print(f"Result type: {type(result)}")
+    
+    # Use includeGridData to preserve empty cells and structure
+    result = sheets_service.spreadsheets().get(
+        spreadsheetId=spreadsheet_id,
+        ranges=[full_range],
+        includeGridData=True
+    ).execute()
+    
+    # Return the grid data as-is, preserving all Google's metadata
     return result
-
-
 
 @mcp.tool()
 def get_sheet_formulas(spreadsheet_id: str,
@@ -712,7 +682,7 @@ def get_spreadsheet_info(spreadsheet_id: str) -> str:
     
     Args:
         spreadsheet_id: The ID of the spreadsheet
-
+    
     Returns:
         JSON string with spreadsheet information
     """
